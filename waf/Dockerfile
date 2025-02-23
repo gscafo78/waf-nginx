@@ -34,7 +34,7 @@ RUN mkdir -p /etc/nginx/modsec/rules \
              /var/www/certbot \
              /etc/nginx/modules-enabled \
              /etc/nginx/conf.d \
-             /var/log/nginx/modsec_audit \
+            #  /var/log/nginx/modsec_audit \
              /var/lib/nginx/body
 
 # Clona e compila ModSecurity v3
