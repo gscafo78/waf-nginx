@@ -34,7 +34,8 @@ RUN mkdir -p /etc/nginx/modsec/rules \
              /var/www/certbot \
              /etc/nginx/modules-enabled \
              /etc/nginx/conf.d \
-             /var/log/nginx/modsec_audit
+             /var/log/nginx/modsec_audit \
+             /var/lib/nginx/body
 
 # Clona e compila ModSecurity v3
 WORKDIR /usr/src
@@ -124,10 +125,12 @@ RUN mv coreruleset/crs-setup.conf.example /etc/nginx/modsec/crs-setup.conf
 # Copia le configurazioni personalizzate
 COPY ./main.conf /etc/nginx/modsec/main.conf
 COPY ./modsecurity.conf /etc/nginx/modsec/modsecurity.conf
+COPY ./default.conf /etc/nginx/sites-enabled/default
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
 # Crea il symlink per avviare Nginx facilmente
 RUN ln -s /usr/share/nginx/sbin/nginx /usr/sbin/nginx
+# RUN chown -R www-data:www-data /var/log/nginx/modsec_audit
 
 # Esponi le porte 80 (HTTP) e 443 (HTTPS)
 EXPOSE 80 443
