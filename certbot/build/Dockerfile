@@ -1,21 +1,17 @@
 # Usa l'immagine base ufficiale di Certbot
-FROM certbot/certbot
+FROM certbot/certbot:latest
 
-# Aggiorna e installa le dipendenze runtime per Certbot
-RUN apk update && apk add --no-cache --virtual .certbot-deps \
-        libffi \
-        libssl3 \
-        openssl \
-        ca-certificates \
-        binutils && \
-    # Pulizia delle dipendenze temporanee
-    apk del .certbot-deps
+# Crea la directory per il webroot
+RUN mkdir -p /var/www/certbot
 
-# Aggiungi comandi personalizzati
-RUN mkdir -p /var/www/certbot 
-
+# Esponi le porte necessarie per HTTP e HTTPS
 EXPOSE 80 443
+
+# Monta i volumi necessari per Certbot
 VOLUME /etc/letsencrypt /var/lib/letsencrypt /var/www/certbot
 
-# Esegui Certbot o altre azioni come desiderato
+# Imposta Certbot come entrypoint
 ENTRYPOINT ["certbot"]
+
+# Comando predefinito (può essere sovrascritto)
+CMD ["--help"]

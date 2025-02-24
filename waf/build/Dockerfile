@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
 
 # Crea le directory necessarie
 RUN mkdir -p /etc/nginx/modsec/rules \
+             /etc/nginx/modsec/user-rules \
              /var/www/certbot \
              /etc/nginx/modules-enabled \
              /etc/nginx/conf.d \
@@ -134,7 +135,7 @@ RUN ln -s /usr/share/nginx/sbin/nginx /usr/sbin/nginx
 # Esponi le porte 80 (HTTP) e 443 (HTTPS)
 EXPOSE 80 443
 
-VOLUME /var/www/certbot /etc/nginx/conf.d /var/log/nginx/
+VOLUME /var/www/certbot /etc/nginx/conf.d /var/log/nginx/ /etc/nginx/modsec/user-rules
 
 # Avvia Nginx in modalità foreground
 CMD ["nginx", "-g", "daemon off;"]
