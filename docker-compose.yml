@@ -1,43 +1,49 @@
-# mkdir -p letsencrypt logs www nginx/conf.d
+# mkdir -p certbot/letsencrypt \
+#            waf/logs \
+#            www \
+#            waf/conf.d \
+#            certbot/logs
+
+# docker-compose up -d nginx
+
+# docker run --rm \
+#   -v $(pwd)certbot/letsencrypt:/etc/letsencrypt \
+#   -v $(pwd)/www:/var/www/certbot \
+#   4ss078/certbot:latest certonly --webroot -w /var/www/certbot \
+#   --email your-email@example.com --agree-tos --no-eff-email -d example.com
 
 services:
-  nginx:
-    image: nginx:latest
-    container_name: nginx
+  waf-nginx:
+    image: 4ss078/waf-nginx:latest
+    build:
+      context: ./waf/build
+      dockerfile: Dockerfile
+    container_name: waf-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - ./letsencrypt:/etc/letsencrypt
+      - ./waf/conf.d:/etc/nginx/conf.d
+      - ./certbot/letsencrypt:/etc/letsencrypt
+      - ./waf/logs:/var/log/nginx
       - ./www:/var/www/certbot
     restart: unless-stopped
-    depends_on:
-      - certbot-renew
-
-  certbot-gencert:
-    image: certbot/certbot:latest
-    container_name: certbot-gencert
-    volumes:
-      - ./letsencrypt:/etc/letsencrypt
-      - ./logs:/var/log/letsencrypt
-      - ./www:/var/www/certbot
-    command: >
-      sh -c "certbot certonly --webroot --webroot-path=/var/www/certbot
-             --email ${EMAIL} --agree-tos --no-eff-email -d ${DOMAIN}"
-    environment:
-      - EMAIL=your-email@example.com
-      - DOMAIN=example.com
-    restart: "no"
 
   certbot-renew:
-    image: certbot/certbot:latest
+    image: 4ss078/certbot:latest
+    build:
+      context: ./certbot/build
+      dockerfile: Dockerfile
     container_name: certbot-renew
     volumes:
-      - ./letsencrypt:/etc/letsencrypt
-      - ./logs:/var/log/letsencrypt
+      - ./certbot/letsencrypt:/etc/letsencrypt
+      - ./certbot/logs:/var/log/letsencrypt
       - ./www:/var/www/certbot
-    entrypoint: "/bin/sh -c"
+    entrypoint: /bin/sh -c
     command: >
-      "trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done"
+      trap exit TERM; 
+      while :; do 
+        certbot renew --webroot -w /var/www/certbot --quiet; 
+        sleep 12h & wait $${!}; 
+      done
     restart: unless-stopped

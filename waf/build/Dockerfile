@@ -34,7 +34,6 @@ RUN mkdir -p /etc/nginx/modsec/rules \
              /var/www/certbot \
              /etc/nginx/modules-enabled \
              /etc/nginx/conf.d \
-            #  /var/log/nginx/modsec_audit \
              /var/lib/nginx/body
 
 # Clona e compila ModSecurity v3
@@ -134,6 +133,8 @@ RUN ln -s /usr/share/nginx/sbin/nginx /usr/sbin/nginx
 
 # Esponi le porte 80 (HTTP) e 443 (HTTPS)
 EXPOSE 80 443
+
+VOLUME /var/www/certbot /etc/nginx/conf.d /var/log/nginx/
 
 # Avvia Nginx in modalità foreground
 CMD ["nginx", "-g", "daemon off;"]
