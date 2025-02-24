@@ -14,6 +14,8 @@ services:
       - ./waf/logs:/var/log/nginx
       - ./www:/var/www/certbot
     restart: unless-stopped
+    networks:
+      - waf-nginx
 
   certbot-renew:
     image: 4ss078/certbot:latest
@@ -33,3 +35,9 @@ services:
         sleep 12h & wait $${!}; 
       done
     restart: unless-stopped
+    networks:
+      - waf-nginx
+
+networks:
+  waf-nginx:
+    driver: bridge
