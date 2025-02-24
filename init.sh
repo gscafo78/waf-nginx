@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Chiedi all'utente di inserire l'email e il dominio
-read -p "Inserisci la tua email: " email
-read -p "Inserisci il dominio: " domain
+# Insert the domain and email
+read -p "Write the email: " email
+read -p "write the domain: " domain
 
 mkdir -p certbot/letsencrypt \
             waf/logs \
