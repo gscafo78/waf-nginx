@@ -13,7 +13,7 @@ mkdir -p certbot/letsencrypt \
 docker compose up -d waf-nginx
 
 docker run --rm \
-            -v $(pwd)certbot/letsencrypt:/etc/letsencrypt \
+            -v $(pwd)/certbot/letsencrypt:/etc/letsencrypt \
             -v $(pwd)/www:/var/www/certbot \
             4ss078/certbot:latest certonly --webroot -w /var/www/certbot \
             --email $email --agree-tos --no-eff-email -d $domain
