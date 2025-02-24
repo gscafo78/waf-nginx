@@ -1,4 +1,4 @@
-# waf-nginx
+# Waf-nginx
 
 ## Overview
 `waf-nginx` is a Docker-based project that sets up a Web Application Firewall (WAF) using Nginx. This project includes configurations for SSL certificates using Certbot.
