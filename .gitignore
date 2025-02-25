@@ -38,7 +38,11 @@ token.txt
 *.log
 /typings
 nginx.conf
-/letsencrypt
+/certbot/letsencrypt
+/certbot/logs
+/waf/conf.d
+/waf/logs
+/waf/user-rules
 
 # System Files
 .DS_Store
