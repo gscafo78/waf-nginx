@@ -10,7 +10,7 @@
 ## Setup
 1. Clone the repository:
     ```sh
-    git clone https://github.com/yourusername/waf-nginx.git
+    git clone https://github.com/gscafo78/waf-nginx
     cd waf-nginx
     ```
 
