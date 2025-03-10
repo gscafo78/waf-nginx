@@ -4,12 +4,12 @@
 read -p "Write the email: " email
 read -p "write the domain: " domain
 
-mkdir -p certbot/letsencrypt \
-            waf/logs \
-            www \
-            waf/conf.d \
-            waf/user-rules \
-            certbot/logs
+mkdir -p $(pwd)/certbot/letsencrypt \
+            $(pwd)/waf/logs \
+            $(pwd)/www \
+            $(pwd)/waf/conf.d \
+            $(pwd)/waf/user-rules \
+            $(pwd)/certbot/logs
 
 docker compose up -d waf-nginx
 

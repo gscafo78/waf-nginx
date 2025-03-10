@@ -27,6 +27,8 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     libtool \
     curl \
+    libreadline-dev \          
+    libncurses5-dev \          
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Crea le directory necessarie
@@ -48,6 +50,23 @@ RUN ./build.sh && ./configure && make -j$(nproc) && make install
 WORKDIR /usr/src
 RUN git clone --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git
 
+# Installa LuaJIT (richiesto da lua-nginx-module)
+WORKDIR /usr/src
+RUN wget https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.0-beta3.tar.gz -O luajit.tar.gz && \
+    tar -xzf luajit.tar.gz && \
+    mv LuaJIT-2.1.0-beta3 LuaJIT && \
+    cd LuaJIT && \
+    make -j$(nproc) && \
+    make install
+
+# Clona ngx_devel_kit (prerequisito per lua-nginx-module)
+WORKDIR /usr/src
+RUN git clone --depth 1 https://github.com/vision5/ngx_devel_kit.git
+
+# Clona lua-nginx-module
+WORKDIR /usr/src
+RUN git clone --depth 1 https://github.com/openresty/lua-nginx-module.git
+
 # Scarica e compila Nginx con il modulo ModSecurity
 WORKDIR /usr/src
 RUN wget http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz && \
@@ -57,8 +76,8 @@ WORKDIR /usr/src/nginx-${NGINX_VERSION}
 
 # Configura Nginx con i moduli richiesti
 RUN ./configure \
-    --with-cc-opt="-g -O2 -ffile-prefix-map=/build/nginx-AoTv4W/nginx-${NGINX_VERSION}=. -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -D_FORTIFY_SOURCE=2" \
-    --with-ld-opt="-Wl,-z,relro -Wl,-z,now -fPIC" \
+    --with-cc-opt="-g -O2 -ffile-prefix-map=/build/nginx-AoTv4W/nginx-${NGINX_VERSION}=. -fstack-protector-strong -Wformat -Werror=format-security -fPIC -Wdate-time -D_FORTIFY_SOURCE=2 -I/usr/local/include/luajit-2.1" \
+    --with-ld-opt="-Wl,-z,relro -Wl,-z,now -fPIC -L/usr/local/lib -Wl,-rpath,/usr/local/lib" \
     --prefix=/usr/share/nginx \
     --conf-path=/etc/nginx/nginx.conf \
     --http-log-path=/var/log/nginx/access.log \
@@ -102,6 +121,8 @@ RUN ./configure \
     --with-stream=dynamic \
     --with-stream_geoip_module=dynamic \
     --add-dynamic-module=../ModSecurity-nginx && \
+    --add-dynamic-module=../ngx_devel_kit \
+    --add-dynamic-module=../lua-nginx-module && \
     make -j$(nproc) && \
     make install
 
@@ -111,31 +132,35 @@ RUN mkdir -p /usr/lib/nginx/modules && \
 
 # Carica i moduli dinamici
 RUN mkdir -p /usr/share/nginx/modules-available && \
-    echo "load_module /usr/lib/nginx/modules/ngx_http_modsecurity_module.so;" > /usr/share/nginx/modules-available/80-mod-http-modsecurity.conf
+    echo "load_module /usr/lib/nginx/modules/ngx_http_modsecurity_module.so;" > /usr/share/nginx/modules-available/80-mod-http-modsecurity.conf && \
+    echo "load_module /usr/lib/nginx/modules/ndk_http_module.so;" > /usr/share/nginx/modules-available/70-mod-http-ndk.conf && \
+    echo "load_module /usr/lib/nginx/modules/ngx_http_lua_module.so;" > /usr/share/nginx/modules-available/75-mod-http-lua.conf
 
 # Crea i collegamenti simbolici per i moduli
 RUN ln -s /usr/share/nginx/modules-available/* /etc/nginx/modules-enabled/
 
-# Clona le regole di sicurezza di OWASP ModSecurity Core Rule Set
-WORKDIR /usr/src
-RUN git clone https://github.com/coreruleset/coreruleset.git
-RUN mv coreruleset/rules /etc/nginx/modsec/
-RUN mv coreruleset/crs-setup.conf.example /etc/nginx/modsec/crs-setup.conf
-
-# Copia le configurazioni personalizzate
-COPY ./main.conf /etc/nginx/modsec/main.conf
-COPY ./modsecurity.conf /etc/nginx/modsec/modsecurity.conf
-COPY ./default.conf /etc/nginx/sites-enabled/default
-COPY ./nginx.conf /etc/nginx/nginx.conf
-
 # Crea il symlink per avviare Nginx facilmente
 RUN ln -s /usr/share/nginx/sbin/nginx /usr/sbin/nginx
-# RUN chown -R www-data:www-data /var/log/nginx/modsec_audit
+
+# Clona le regole OWASP CRS durante il build
+WORKDIR /usr/src
+RUN git clone https://github.com/coreruleset/coreruleset.git
+
+# Copia le configurazioni personalizzate in una directory temporanea
+COPY ./default.conf ./nginx_template.conf ./modsec-config/main.conf ./modsec-config/modsecurity.conf /usr/src/modsec-config/
+
+
+# Aggiungi l'entrypoint e imposta i permessi
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Esponi le porte 80 (HTTP) e 443 (HTTPS)
 EXPOSE 80 443
 
-VOLUME /var/www/certbot /etc/nginx/conf.d /var/log/nginx/ /etc/nginx/modsec/user-rules
+VOLUME /var/www/certbot /etc/nginx/conf.d /var/log/nginx/ /etc/nginx/modsec
+
+# Imposta l'entrypoint e il comando di default
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Avvia Nginx in modalità foreground
 CMD ["nginx", "-g", "daemon off;"]
