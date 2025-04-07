@@ -43,6 +43,7 @@ nginx.conf
 /waf/conf.d
 /waf/logs
 /waf/user-rules
+curl_command.txt
 
 # System Files
 .DS_Store

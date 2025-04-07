@@ -118,10 +118,17 @@ RUN mkdir -p /usr/share/nginx/modules-available && \
 RUN ln -s /usr/share/nginx/modules-available/* /etc/nginx/modules-enabled/
 
 # Crea il symlink per avviare Nginx facilmente
-RUN ln -s /usr/share/nginx/sbin/nginx /usr/sbin/nginx
+RUN [ ! -e /usr/sbin/nginx ] && ln -s /usr/share/nginx/sbin/nginx /usr/sbin/nginx || true
 
-# Clona le regole OWASP CRS durante il build
 WORKDIR /usr/src
+RUN wget https://github.com/crowdsecurity/cs-nginx-bouncer/releases/download/v1.0.8/crowdsec-nginx-bouncer.tgz
+RUN tar -xvzf crowdsec-nginx-bouncer.tgz
+WORKDIR /usr/src/crowdsec-nginx-bouncer-v1.0.8
+RUN chmod +x install.sh
+RUN ./install.sh
+
+WORKDIR /usr/src
+# Clona le regole OWASP CRS durante il build
 RUN git clone https://github.com/coreruleset/coreruleset.git
 
 # Copia le configurazioni personalizzate in una directory temporanea
